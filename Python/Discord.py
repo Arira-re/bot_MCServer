@@ -117,12 +117,14 @@ class MyClient(discord.Client):
         print(f"Logged in as {self.user}")
 
     async def start_log_monitor(self):
+        print("ログ監視起動")
         global log_task
         if log_task is not None and not log_task.done():
             return
         log_task = asyncio.create_task(tail_log(self))
 
     async def stop_log_monitor(self):
+        print("ログ監視停止")
         global log_task
         if log_task is not None and not log_task.done():
             log_task.cancel()
@@ -183,6 +185,7 @@ class MyClient(discord.Client):
                     return
                 await interaction.response.send_message("サーバー停止コマンドを送信しました。サーバーの終了にはしばらく時間がかかる場合があります。", ephemeral=True)
                 print("サーバー停止")
+                await self.stop_log_monitor()
                 async def followup_status():
                     await asyncio.sleep(10)
                     status = get_mc_status(LOG_PATH)
@@ -232,6 +235,7 @@ class MyClient(discord.Client):
         @self.tree.command(guild=guild, name="bot_restart", description="Bot自体を再起動します")
         async def bot_restart(interaction: discord.Interaction):
             await interaction.response.send_message("Botを再起動します...", ephemeral=True)
+            await self.stop_log_monitor()
             await self.close()
             subprocess.Popen([START_BAT], shell=True)
             await self.close()
